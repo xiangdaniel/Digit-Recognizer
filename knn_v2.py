@@ -6,9 +6,11 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 data_dir = "data/"
-def data_load(data_dir):
+
+def load_data(data_dir):
     data_train = pd.read_csv(data_dir + "train.csv")
     print("shape of train.csv: ", data_train.shape)
+    
     label_train = data_train.values[:,0]
     image_train = data_train.values[:,1:]
     
@@ -16,8 +18,8 @@ def data_load(data_dir):
     print("shape of test.csv: ", data_test.shape)
     
     return label_train, image_train, data_test.values
-    
-label_train, image_train, image_pred = data_load(data_dir)
+
+label_train, image_train, image_pred = load_data(data_dir)
 
 # plot images of 0~9
 row_plot = 5
@@ -45,13 +47,40 @@ image_train, image_test, label_train, label_test = train_test_split(image_train,
 print("shape of train: ", image_train.shape)
 print("shape of test: ", image_test.shape)
 
-# Use sklearn package and find the optimum k
-import time
-from sklearn.metrics import accuracy_score,classification_report,confusion_matrix
-from sklearn.neighbors import KNeighborsClassifier
+# build class of KNN
+class KNN(object):
+    def __init__(self, n_neighbors):
+        self.n_neighbors = n_neighbors
+        
+    def fit(self, X_train, y_train):
+        self.X_train = X_train
+        self.y_train = y_train
+        
+    def predict(self, X_test):
+        y_pred = []
+        for i in range(len(X_test)):
+            diffMatrix = np.tile(X_test[i], (len(self.X_train), 1)) - self.X_train
+            distances = np.sum(diffMatrix ** 2, axis = 1) ** 0.5
+            sortedDistancesIndex = distances.argsort()
+            classifier = {}
+            for n in range(self.n_neighbors):
+                vote = self.y_train[sortedDistancesIndex[n]]
+                classifier[vote] = classifier.get(vote, 0) + 1
+                
+            max = 0
+            prediction = 0
+            for k, v in classifier.items():
+                if v > max:
+                    prediction = k
+                    max = v
+            
+            y_pred.append(prediction)
+            
+        return(y_pred)
 
-k_range = range(1, 6)
-k_ans = 0
+# find optimum k
+import time
+from sklearn.metrics import accuracy_score
 
 def opt_k(image_train, label_train, image_test, label_test, range_k):
     max = 0
@@ -60,34 +89,34 @@ def opt_k(image_train, label_train, image_test, label_test, range_k):
     for k in range_k:
         print("when k = " + str(k), "training begins")
         start_time = time.time()
-        knn = KNeighborsClassifier(n_neighbors = k)
+        knn = KNN(k)
         knn.fit(image_train, label_train)
         label_pred = knn.predict(image_test)
         accuracy = accuracy_score(label_test, label_pred)
-        print(classification_report(label_test, label_pred))
-        print(confusion_matrix(label_test, label_pred))
         end_time = time.time()
-        print("   computing time: " + str(end_time - start_time), "and accuracy = " + str(accuracy))
+        print("   computing time: " + str(end_time - start_time) + "and accuracy = " + str(accuracy))
         accuracy_scores.append(accuracy)
         if accuracy > max:
             k_ans = k
-            max = accuracy        
+            max = accuracy
+            
     plt.plot(range_k, accuracy_scores)
     plt.xlabel("k")
     plt.ylabel("accuracy")
-    plt.show()
+    
     print("the optimum k is ", k_ans)
+    
     return k_ans
 
 k = opt_k(image_train, label_train, image_test, label_test, range(1,6))
 
-knn = KNeighborsClassifier(n_neighbors = k)
+knn = KNN(k)
 knn.fit(image_train, label_train)
 label_pred = knn.predict(image_pred)
 print(label_pred)
 
 # let's check it
-i = 987
+i = 311
 plt.imshow(image_pred[i].reshape(28,28))
 plt.show()
 
