@@ -36,7 +36,7 @@ for num in range(0,10):
 plt.show()
 
 ############################################################
-# 2. Train using model of SK Learn
+# 2. Train using model of KNN
 # 80% of image_train for traning dataset and 20% of image_train for test dataset
 from sklearn.model_selection import train_test_split
 
