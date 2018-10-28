@@ -1,3 +1,7 @@
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+
 # build class of KNN
 class KNN(object):
     def __init__(self, n_neighbors):
